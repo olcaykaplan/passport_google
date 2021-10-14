@@ -1,5 +1,6 @@
  const isUserAuthenticated = (req, res, next) => {
-   console.log("req.user",req.user)
+   console.log("isUserAuthenticated req.user",req.user)
+   console.log("isUserAuthenticated res.getHeaders",res.getHeaders())
   if (req.user) {
     next();
   } else {

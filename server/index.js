@@ -1,13 +1,13 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
- require("dotenv").config();
+require("dotenv").config();
 const cors = require("cors");
 const session = require("express-session");
 const MongoStore = require("connect-mongo")(session);
 models = require("./models/index.js");
 const isUserAuthenticated = require("./middleware/auth.js");
-const cookieParser = require("cookie-parser")
+const cookieParser = require("cookie-parser");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
@@ -31,6 +31,9 @@ app.use(
   cors({
     origin: "http://localhost:3000",
     credentials: true,
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    allowedHeaders: ['Content-Type', 'Authorization']
+
   })
 );
 
@@ -52,15 +55,19 @@ const sessionStore = new MongoStore({
   collection: "sessions",
 });
 const oneDay = 1000 * 60 * 60 * 24; // Equals 1 day (1 day * 24 hr/1 day * 60 min/1 hr * 60 sec/1 min * 1000 ms / 1 sec)
-//app.use(cookieParser('secret'));
+app.use(cookieParser("secret"));
+app.enable('trust proxy')
 app.use(
   session({
     secret: "secret",
     resave: false,
     saveUninitialized: true,
     store: sessionStore,
+    proxy: true,
     cookie: {
-      secure: false,
+      path: "/",
+      httpOnly:true,
+      secure: true,
       maxAge: oneDay,
     },
   })
@@ -87,7 +94,9 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:5000/api/v1/auth/google/callback",
+      //callbackURL: "http://localhost:5000/api/v1/auth/google/callback",
+      callbackURL:
+        "https://google-passportjs.herokuapp.com/api/v1/auth/google/callback",
       passReqToCallback: true,
     },
 
@@ -119,23 +128,22 @@ passport.use(
 );
 
 const findUser = (googleId) => {
-    return new Promise((resolve, reject) => {
-      models.userModel.findUser(googleId, (err, doc) => {
-        if (!err) resolve(doc);
-        else reject(err);
-      });
+  return new Promise((resolve, reject) => {
+    models.userModel.findUser(googleId, (err, doc) => {
+      if (!err) resolve(doc);
+      else reject(err);
     });
-  };
+  });
+};
 
 const findUserById = (userObjectId) => {
-    return new Promise((resolve, reject) => {
-      models.userModel.findUserById(userObjectId, (err, doc) => {
-        if (!err) resolve(doc);
-        else reject(err);
-      });
+  return new Promise((resolve, reject) => {
+    models.userModel.findUserById(userObjectId, (err, doc) => {
+      if (!err) resolve(doc);
+      else reject(err);
     });
-  };
-  
+  });
+};
 
 app.get(
   "/api/v1/auth/google",
@@ -145,7 +153,7 @@ app.get(
 app.get(
   "/api/v1/auth/google/callback",
   passport.authenticate("google", {
-    successRedirect:"http://localhost:3000",
+    successRedirect: "http://localhost:3000",
     session: true,
   }),
   function (req, res) {
@@ -158,21 +166,21 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/v1/auth/user", isUserAuthenticated, (req, res) => {
-    let data = {
-        id: req.user._id,
-        fullName: req.user.fullName,
-        email: req.user.email,
-        picture: req.user.picture,
-        locale: req.user.locale,
-        preferredLanuage: req.user.preferredLanguage
-    }
-    console.log("auth user datası",data)
-    res.json(data);
+  let data = {
+    id: req.user._id,
+    fullName: req.user.fullName,
+    email: req.user.email,
+    picture: req.user.picture,
+    locale: req.user.locale,
+    preferredLanuage: req.user.preferredLanguage,
+  };
+  console.log("auth user datası", data);
+  res.json(data);
 });
 app.get("/api/v1/auth/logout", isUserAuthenticated, (req, res) => {
   //  console.log("routes -> user |  user.js logout",req.user)
-    req.logout();
-    res.json(true)
+  req.logout();
+  res.json(true);
 });
 
 app.listen(process.env.PORT || 4000, () => {

@@ -3,7 +3,7 @@ import React from 'react'
  const GoogleButton = () => {
     const redirectToGoogleSSO = async () => {
         let timer: NodeJS.Timeout | null = null;
-        const googleLoginURL = "http://localhost:5000/api/v1/auth/google"
+        const googleLoginURL = "https://google-passportjs.herokuapp.com/api/v1/auth/google"
         const newWindow = window.open(
           googleLoginURL,
           "_parent"
